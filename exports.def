@@ -1,0 +1,4 @@
+LIBRARY	"No Lockpick Activate"
+EXPORTS
+SKSEPlugin_Query
+SKSEPlugin_Load
