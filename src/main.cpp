@@ -10,6 +10,7 @@
 
 RelocPtr <uintptr_t> ContainerWithKeyAddr(0x22B834);
 RelocPtr <uintptr_t> LockpickActivateAddr(0x897FCE);
+
 extern "C" {
 	bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 	{
@@ -31,6 +32,7 @@ extern "C" {
 		switch (skse->runtimeVersion) {
 		case RUNTIME_VERSION_1_5_73:
 		case RUNTIME_VERSION_1_5_80:
+		case RUNTIME_VERSION_1_5_97:
 			break;
 		default:
 			_MESSAGE("This plugin is not compatible with this version of game.");
