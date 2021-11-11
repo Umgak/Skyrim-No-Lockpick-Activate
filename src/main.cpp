@@ -10,8 +10,22 @@
 
 #include "versiondb.h" //meh's magical versioning header
 
-unsigned long long LockpickActivateOffset = 0;
+bool bIsAE = 0;
+
+unsigned long long ContainerWithKeyAddr = 0;
+unsigned long long LockpickActivateAddr = 0;
+
 unsigned long long ContainerWithKeyOffset = 0;
+unsigned long long LockpickActivateOffset = 0;
+
+const unsigned long long ContainerWithKeyOffsetSE = 0x164;
+const unsigned long long LockpickActivateOffsetSE = 0x1BE;
+
+const unsigned long long ContainerWithKeyAddrAE = 0x23C1F0;
+const unsigned long long LockpickActivateAddrAE = 0x8C8730;
+const unsigned long long ContainerWithKeyOffsetAE = 0x2E4;
+const unsigned long long LockpickActivateOffsetAE = 0x1C0;
+
 
 bool InitializeOffsets()
 {
@@ -31,12 +45,12 @@ bool InitializeOffsets()
 	}
 
 	// This offset does not include base address. Actual address would be ModuleBase + MyOffset.
-	if (!db.FindOffsetById(17485, ContainerWithKeyOffset))
+	if (!db.FindOffsetById(17485, ContainerWithKeyAddr))
 	{
 		_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with key!");
 		return false;
 	}
-	if (!db.FindOffsetById(51088, LockpickActivateOffset))
+	if (!db.FindOffsetById(51088, LockpickActivateAddr))
 	{
 		_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with lockpick!");
 		return false;
@@ -65,33 +79,38 @@ extern "C" {
 			return false;
 		} 
 
-		if (skse->runtimeVersion != RUNTIME_VERSION_1_6_318) {
-			_ERROR("This plugin is not compatible with this version of the game.");
-			return false;
+		if (skse->runtimeVersion <= RUNTIME_VERSION_1_6_317)
+		{
+			bIsAE = 1;
 		}
-
 		return true;
 	}
 
 
 	bool SKSEPlugin_Load(const SKSEInterface* skse)
 	{
-		/*if (InitializeOffsets())
+		if (!bIsAE)
 		{
-			RelocPtr <uintptr_t> ContainerWithKeyAddr(ContainerWithKeyOffset+0x164);
-			RelocPtr <uintptr_t> LockpickActivateAddr(LockpickActivateOffset+0x1BE);
-			SafeWriteBuf(ContainerWithKeyAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // container with key
-			SafeWriteBuf(LockpickActivateAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // lockpick activate
+			ContainerWithKeyOffset = ContainerWithKeyOffsetSE;
+			LockpickActivateOffset = LockpickActivateOffsetSE;
 
-			_MESSAGE("[MESSAGE] No Lockpick Activate loaded successfully.");
+			if (!InitializeOffsets())
+			{
+				_FATALERROR("[FATAL ERROR] Unable to find offsets for this version of the game!");
+				_FATALERROR("[FATAL ERROR] Make sure you install meh321's Address Library for SKSE Plugins!");
+				_FATALERROR("[FATAL ERROR] These can be found at: https://www.nexusmods.com/skyrimspecialedition/mods/32444");
+				return false;
+			}
 		}
 		else
 		{
-			_FATALERROR("[FATAL ERROR] Unable to find offsets for this version of the game!");
-			_FATALERROR("[FATAL ERROR] Make sure you install meh321's Address Library for SKSE Plugins!");
-			_FATALERROR("[FATAL ERROR] These can be found at: https://www.nexusmods.com/skyrimspecialedition/mods/32444");
-			return false;
-		}*/
+			ContainerWithKeyAddr = ContainerWithKeyAddrAE;
+			ContainerWithKeyOffset = ContainerWithKeyOffsetAE;
+
+			LockpickActivateAddr = LockpickActivateAddrAE;
+			LockpickActivateOffset = LockpickActivateOffsetAE;
+
+		}
 		RelocPtr <uintptr_t> ContainerWithKeyAddr(0x23C1F0 + 0x2E4);
 		RelocPtr <uintptr_t> LockpickActivateAddr(0x8C8730 + 0x1C0);
 		SafeWriteBuf(ContainerWithKeyAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // container with key
@@ -101,6 +120,5 @@ extern "C" {
 
 		return true;
 	}
-
 }
 
