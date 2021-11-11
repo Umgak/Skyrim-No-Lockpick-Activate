@@ -4,7 +4,7 @@
 #define MAKE_STR_HELPER(a_str) #a_str
 #define MAKE_STR(a_str) MAKE_STR_HELPER(a_str)
 
-#define NLA_VERSION_MAJOR	2
+#define NLA_VERSION_MAJOR	3
 #define NLA_VERSION_MINOR	0
 #define NLA_VERSION_PATCH	0
 #define NLA_VERSION_BETA	0

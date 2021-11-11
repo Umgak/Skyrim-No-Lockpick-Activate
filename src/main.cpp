@@ -64,8 +64,11 @@ extern "C" {
 			_FATALERROR("[FATAL ERROR] Loaded in editor, marking as incompatible!");
 			return false;
 		} 
-		//functions referenced by this program exist in all versions of the library
-		//therefore, no version check is actually required
+
+		if (skse->runtimeVersion != RUNTIME_VERSION_1_6_318) {
+			_ERROR("This plugin is not compatible with this version of the game.");
+			return false;
+		}
 
 		return true;
 	}
@@ -73,7 +76,7 @@ extern "C" {
 
 	bool SKSEPlugin_Load(const SKSEInterface* skse)
 	{
-		if (InitializeOffsets())
+		/*if (InitializeOffsets())
 		{
 			RelocPtr <uintptr_t> ContainerWithKeyAddr(ContainerWithKeyOffset+0x164);
 			RelocPtr <uintptr_t> LockpickActivateAddr(LockpickActivateOffset+0x1BE);
@@ -88,7 +91,14 @@ extern "C" {
 			_FATALERROR("[FATAL ERROR] Make sure you install meh321's Address Library for SKSE Plugins!");
 			_FATALERROR("[FATAL ERROR] These can be found at: https://www.nexusmods.com/skyrimspecialedition/mods/32444");
 			return false;
-		}
+		}*/
+		RelocPtr <uintptr_t> ContainerWithKeyAddr(0x23C1F0 + 0x2E4);
+		RelocPtr <uintptr_t> LockpickActivateAddr(0x8C8730 + 0x1C0);
+		SafeWriteBuf(ContainerWithKeyAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // container with key
+		SafeWriteBuf(LockpickActivateAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // lockpick activate
+
+		_MESSAGE("[MESSAGE] No Lockpick Activate loaded successfully.");
+
 		return true;
 	}
 
