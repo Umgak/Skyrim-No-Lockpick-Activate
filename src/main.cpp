@@ -10,8 +10,6 @@
 
 #include "versiondb.h" //meh's magical versioning header
 
-bool bIsAE = 0;
-
 unsigned long long ContainerWithKeyFunc = 0;
 unsigned long long LockpickActivateFunc = 0;
 
@@ -62,7 +60,20 @@ bool InitializeOffsets()
 }
 
 extern "C" {
+	__declspec(dllexport) SKSEPluginVersionData SKSEPlugin_Version =
+	{
+		SKSEPluginVersionData::kVersion,
+		NLA_VERSION_MAJOR,
+		"No Lockpick Activate",
+		"Umgak",
+		"",
+		0,
+		{ RUNTIME_VERSION_1_6_318, 0 },
+		0,
+	};
+
 	bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
+	//SKSEPlugin_Query is used on pre-AE versions but is not actually called on AE SKSE, so this code can remain unchanged from 1.5.97's implementation.
 	{
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\No Lockpick Activate.log");
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
@@ -79,21 +90,28 @@ extern "C" {
 			return false;
 		} 
 
-		if (skse->runtimeVersion >= RUNTIME_VERSION_1_6_317)
-		{
-			bIsAE = 1;
-		}
 		return true;
 	}
 
 
 	bool SKSEPlugin_Load(const SKSEInterface* skse)
 	{
-		if (!bIsAE)
+		if (skse->runtimeVersion >= RUNTIME_VERSION_1_6_317) //1_6_317 was the first AE version
 		{
-			ContainerWithKeyOffset = ContainerWithKeyOffsetSE;
-			LockpickActivateOffset = LockpickActivateOffsetSE;
+			//logging is not set up in SKSEPlugin_Query on AE, so we set it up here
+			gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\No Lockpick Activate.log");
+			gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
+			gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
+			_MESSAGE("No Lockpick Activate v%s", NLA_VERSION_VERSTRING);
+			_MESSAGE("[MESSAGE] Anniversary Edition update detected. Falling back to static offsets.");
+			ContainerWithKeyFunc = ContainerWithKeyFuncAE;
+			ContainerWithKeyOffset = ContainerWithKeyOffsetAE;
 
+			LockpickActivateFunc = LockpickActivateFuncAE;
+			LockpickActivateOffset = LockpickActivateOffsetAE;
+		}
+		else
+		{
 			if (!InitializeOffsets())
 			{
 				_FATALERROR("[FATAL ERROR] Unable to find offsets for this version of the game!");
@@ -101,15 +119,8 @@ extern "C" {
 				_FATALERROR("[FATAL ERROR] These can be found at: https://www.nexusmods.com/skyrimspecialedition/mods/32444");
 				return false;
 			}
-		}
-		else
-		{
-			ContainerWithKeyFunc = ContainerWithKeyFuncAE;
-			ContainerWithKeyOffset = ContainerWithKeyOffsetAE;
-
-			LockpickActivateFunc = LockpickActivateFuncAE;
-			LockpickActivateOffset = LockpickActivateOffsetAE;
-
+			ContainerWithKeyOffset = ContainerWithKeyOffsetSE;
+			LockpickActivateOffset = LockpickActivateOffsetSE;
 		}
 		RelocPtr <uintptr_t> ContainerWithKeyAddr(ContainerWithKeyFunc + ContainerWithKeyOffset);
 		RelocPtr <uintptr_t> LockpickActivateAddr(LockpickActivateFunc + LockpickActivateOffset);
