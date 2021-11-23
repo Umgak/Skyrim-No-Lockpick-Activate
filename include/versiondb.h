@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include <map>
 #include <fstream>
@@ -38,7 +39,7 @@ private:
 	{
 		return (unsigned long long)ptr;
 	}
-	
+
 	static bool ParseVersionFromString(const char* ptr, int& major, int& minor, int& revision, int& build)
 	{
 		return sscanf_s(ptr, "%d.%d.%d.%d", &major, &minor, &revision, &build) == 4 && ((major != 1 && major != 0) || minor != 0 || revision != 0 || build != 0);
@@ -115,7 +116,7 @@ public:
 			if (GetFileVersionInfo(szVersionFile, verHandle, verSize, verData))
 			{
 				{
-					char * vstr = NULL;
+					char* vstr = NULL;
 					UINT vlen = 0;
 					if (VerQueryValueA(verData, "\\StringFileInfo\\040904B0\\ProductVersion", (LPVOID*)&vstr, &vlen) && vlen && vstr && *vstr)
 					{
@@ -128,7 +129,7 @@ public:
 				}
 
 				{
-					char * vstr = NULL;
+					char* vstr = NULL;
 					UINT vlen = 0;
 					if (VerQueryValueA(verData, "\\StringFileInfo\\040904B0\\FileVersion", (LPVOID*)&vstr, &vlen) && vlen && vstr && *vstr)
 					{
@@ -167,7 +168,7 @@ public:
 	bool Load()
 	{
 		int major, minor, revision, build;
-		
+
 		if (!GetExecutableVersion(major, minor, revision, build))
 			return false;
 
@@ -179,7 +180,18 @@ public:
 		Clear();
 
 		char fileName[256];
-		_snprintf_s(fileName, 256, "Data\\SKSE\\Plugins\\version-%d-%d-%d-%d.bin", major, minor, revision, build);
+
+		//dirty mod by umgak for dual-compat. don't use this if you don't know what you're doing - you must change IDs between versions!
+		if (minor < 6)
+		{
+			_snprintf_s(fileName, 256, "Data\\SKSE\\Plugins\\version-%d-%d-%d-%d.bin", major, minor, revision, build);
+
+		}
+		else
+		{
+			_snprintf_s(fileName, 256, "Data\\SKSE\\Plugins\\versionlib-%d-%d-%d-%d.bin", major, minor, revision, build);
+
+		}
 
 		std::ifstream file(fileName, std::ios::binary);
 		if (!file.good())
@@ -187,8 +199,16 @@ public:
 
 		int format = read<int>(file);
 
-		if (format != 1)
-			return false;
+		if (minor < 6)
+		{
+			if (format != 1)
+				return false;
+		}
+		else
+		{
+			if (format != 2)
+				return false;
+		}
 
 		for (int i = 0; i < 4; i++)
 			_ver[i] = read<int>(file);
@@ -204,7 +224,7 @@ public:
 		if (tnLen < 0 || tnLen >= 0x10000)
 			return false;
 
-		if(tnLen > 0)
+		if (tnLen > 0)
 		{
 			char* tnbuf = (char*)malloc(tnLen + 1);
 			file.read(tnbuf, tnLen);

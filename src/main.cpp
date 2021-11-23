@@ -19,13 +19,11 @@ unsigned long long LockpickActivateOffset = 0;
 const unsigned long long ContainerWithKeyOffsetSE = 0x164;
 const unsigned long long LockpickActivateOffsetSE = 0x1BE;
 
-const unsigned long long ContainerWithKeyFuncAE = 0x23C1F0;
-const unsigned long long LockpickActivateFuncAE = 0x8C8730;
 const unsigned long long ContainerWithKeyOffsetAE = 0x2E4;
 const unsigned long long LockpickActivateOffsetAE = 0x1C0;
 
 
-bool InitializeOffsets()
+bool InitializeOffsets(const SKSEInterface* skse)
 {
 	// Allocate on stack so it will be unloaded when we exit this function.
 	// No need to have the whole database loaded and using up memory for no reason.
@@ -43,15 +41,35 @@ bool InitializeOffsets()
 	}
 
 	// This offset does not include base address. Actual address would be ModuleBase + MyOffset.
-	if (!db.FindOffsetById(17485, ContainerWithKeyFunc))
+	if (skse->runtimeVersion >= RUNTIME_VERSION_1_6_317)
 	{
-		_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with key!");
-		return false;
+		if (!db.FindOffsetById(17922, ContainerWithKeyFunc)) //ae offsets
+		{
+			_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with key!");
+			db.Clear();
+			return false;
+		}
+		if (!db.FindOffsetById(51968, LockpickActivateFunc))
+		{
+			_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with lockpick!");
+			db.Clear();
+			return false;
+		}
 	}
-	if (!db.FindOffsetById(51088, LockpickActivateFunc))
+	else
 	{
-		_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with lockpick!");
-		return false;
+		if (!db.FindOffsetById(17485, ContainerWithKeyFunc)) //se offsets
+		{
+			_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with key!");
+			db.Clear();
+			return false;
+		}
+		if (!db.FindOffsetById(51088, LockpickActivateFunc))
+		{
+			_FATALERROR("[FATAL ERROR] Failed to find offset for activating container with lockpick!");
+			db.Clear();
+			return false;
+		}
 	}
 
 	// Everything was successful.
@@ -67,8 +85,8 @@ extern "C" {
 		"No Lockpick Activate",
 		"Umgak",
 		"",
+		SKSEPluginVersionData::kVersionIndependent_AddressLibraryPostAE,
 		0,
-		{ RUNTIME_VERSION_1_6_318, 0 },
 		0,
 	};
 
@@ -103,25 +121,24 @@ extern "C" {
 			gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
 			gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 			_MESSAGE("No Lockpick Activate v%s", NLA_VERSION_VERSTRING);
-			_MESSAGE("[MESSAGE] Anniversary Edition update detected. Falling back to static offsets.");
-			ContainerWithKeyFunc = ContainerWithKeyFuncAE;
-			ContainerWithKeyOffset = ContainerWithKeyOffsetAE;
 
-			LockpickActivateFunc = LockpickActivateFuncAE;
+			ContainerWithKeyOffset = ContainerWithKeyOffsetAE;
 			LockpickActivateOffset = LockpickActivateOffsetAE;
 		}
 		else
 		{
-			if (!InitializeOffsets())
-			{
+			ContainerWithKeyOffset = ContainerWithKeyOffsetSE;
+			LockpickActivateOffset = LockpickActivateOffsetSE;
+		}
+		if (!InitializeOffsets(skse))
+		{
 				_FATALERROR("[FATAL ERROR] Unable to find offsets for this version of the game!");
 				_FATALERROR("[FATAL ERROR] Make sure you install meh321's Address Library for SKSE Plugins!");
 				_FATALERROR("[FATAL ERROR] These can be found at: https://www.nexusmods.com/skyrimspecialedition/mods/32444");
 				return false;
-			}
-			ContainerWithKeyOffset = ContainerWithKeyOffsetSE;
-			LockpickActivateOffset = LockpickActivateOffsetSE;
 		}
+
+		
 		RelocPtr <uintptr_t> ContainerWithKeyAddr(ContainerWithKeyFunc + ContainerWithKeyOffset);
 		RelocPtr <uintptr_t> LockpickActivateAddr(LockpickActivateFunc + LockpickActivateOffset);
 		SafeWriteBuf(ContainerWithKeyAddr.GetUIntPtr(), (void*)"\x90\x90\x90\x90\x90", 5); // container with key
