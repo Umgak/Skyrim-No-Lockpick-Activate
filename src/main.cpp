@@ -85,6 +85,7 @@ extern "C" {
 		"No Lockpick Activate",
 		"Umgak",
 		"",
+		SKSEPluginVersionData::kVersionIndependentEx_NoStructUse,
 		SKSEPluginVersionData::kVersionIndependent_AddressLibraryPostAE,
 		0,
 		0,
